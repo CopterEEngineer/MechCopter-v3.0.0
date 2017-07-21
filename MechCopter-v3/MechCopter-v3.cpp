@@ -29,13 +29,13 @@ int main()
 
 	mrotor.testMRotor();
 
-	//test_random(X);
-	//_sleep(100);
-	//test_random(Y);
-	//ttest(XX, YY);
-	//test_vectormultip(X, Y);
+	test_random(X);
+	_sleep(100);
+	test_random(Y);
+	ttest(XX, YY);
+	test_vectormultip(X, Y);
 
-	//test_for(100000);
+	test_for(100000);
 
 
 	printf("\n");
