@@ -259,3 +259,17 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# michael-defined
+# ignore a single file
+
+# ignore an entire directory
+
+# ignore a file type
+*.txt
+*.output
+*.doc
+*.docx
+*.pdf
+
+# add an exception (using !)
