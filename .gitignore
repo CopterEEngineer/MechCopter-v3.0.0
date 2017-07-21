@@ -7,8 +7,6 @@
 *.userosscache
 *.sln.docstates
 
-# User-specific files (MonoDevelop/Xamarin Studio)
-*.userprefs
 *.txt
 *.output
 *.doc
@@ -17,6 +15,9 @@
 
 # add an exception (using !)
 !ReadMe.txt
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
 
 # Build results
 [Dd]ebug/
