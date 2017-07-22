@@ -28,6 +28,7 @@
 //#undef _USE_MKL
 #endif // USE_MKL
 
+#define USE_DOUBLE
 #define myTYPE double //float //
 
 
@@ -1801,7 +1802,7 @@ public:
 				for (int k = 0; k < nj; ++k) {
 					temptemp += (*(A_p++)) * (*(B_p++));
 				}
-				temp(i, j) = temptemp;
+				temp(i, j) = temptemp; //左边是地址递增或递减
 			}
 		}
 		return temp;

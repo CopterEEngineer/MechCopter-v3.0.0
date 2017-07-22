@@ -11,59 +11,26 @@
 class Coordinate {
 
 public:
-	Matrix1<myTYPE> origin;
-	Matrix2<myTYPE> euler;
+	myTYPE origin[3], euler[3];
+	myTYPE Ttransf[3][3], Etransf[3][3];
 
-	Coordinate() {
-		origin.allocate(3);
-		euler.allocate(3, 3);
-	}
+	Coordinate();
 
+	Coordinate(const double *x, const double *y);
 
-	Coordinate(Matrix1<myTYPE> &A, Matrix2<myTYPE> &B) {
-		origin = A;
-		euler = B;
-	}
+	Coordinate(const float *x, const float *y);
 
+	Coordinate(const Coordinate &A);
 
-	Coordinate(const Coordinate &A) {
-		cout << "Copy constructor." << endl;
-		origin = A.origin;
-		euler = A.euler;
-	}
+	~Coordinate();
 
+	void SetCoordinate(const myTYPE *og, const myTYPE *el){ Coordinate(og, el); }
+	
+	inline void Transfer(double t12[3][3], double r12[3], const Coordinate &coord1, const Coordinate &coord2);
 
-	~Coordinate() {
-		origin.deallocate();
-		euler.deallocate();
-	}
-
-
-	inline void setcoordinate(const Matrix1<myTYPE> &A, const Matrix2<myTYPE> &B) {
-		origin = A;
-		euler = B;
-	}
-
-
-	inline Matrix2<myTYPE> transfer(const Coordinate &A) { 
-		Matrix2<myTYPE> temp;
-		return temp; }
-
-
-	inline Matrix1<myTYPE> translate(const Coordinate &A) { 
-		Matrix1<myTYPE> temp;
-		return temp;
-	}
-
-
-	inline Coordinate update(void) { 
-		Coordinate temp;
-		return temp; }
+	inline void Transfer(float t12[3][3], float r12[3], const Coordinate &coord1, const Coordinate &coord2);
 
 };
-
-
-// member functions definition
 
 
 

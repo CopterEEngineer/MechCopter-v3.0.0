@@ -18,7 +18,7 @@ const int COUNT = 70000;
 int main()
 {
 
-	MRotor mrotor;
+	//Rotor mrotor("main");
 	Matrix1<myTYPE> X(jsize), Y(jsize), Z(jsize);
 	//myTYPE *aa, *bb, *cc;
 	clock_t tStart;
@@ -27,7 +27,6 @@ int main()
 	myTYPE *p, *q;
 	myTYPE a, b;
 
-	mrotor.testMRotor();
 
 	test_random(X);
 	_sleep(100);
@@ -35,7 +34,7 @@ int main()
 	ttest(XX, YY);
 	test_vectormultip(X, Y);
 
-	test_for(100000);
+	//test_for(100000);
 
 
 	printf("\n");

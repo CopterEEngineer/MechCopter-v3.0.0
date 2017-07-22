@@ -142,6 +142,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Algorithm.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="MechCopter-v3.cpp" />
     <ClCompile Include="stdafx.cpp" />

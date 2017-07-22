@@ -3,37 +3,406 @@
 
 
 
-void MRotor::InducedVelCalcPreWake(void) {
+Copter::Copter() :System()
+{
+	/* read config files */
+	rho = 0.002378;
+	vsound = 1115.48;
+	for (int i = 2; i >= 0; --i) {
+		vel[i] = 0;
+		omg[i] = 0;
+		dvel[i] = 0;
+		domg[i] = 0;
+	}
+	myTYPE origin[3] = { 0,0,0 };
+	myTYPE euler[3] = { 0,0,0 };
+	/* read config files */
 
-	// Bound circulation
-	VortexBonStr();
+	refcoord.SetCoordinate(origin, euler);
+}
 
-	// tip vortices strength
-#ifdef TIP
-	VortexTipStr();
 
-#endif // TIP
+Copter::Copter(const Copter &H) {
+	cout << "Copter copy constructor." << endl;
+	rho = H.rho;
+	vsound = H.vsound;
+	refcoord = H.refcoord;
+	for (int i = 2; i >= 0; --i) {
+		vel[i] = H.vel[i];
+		omg[i] = H.omg[i];
+		dvel[i] = H.dvel[i];
+		domg[i] = H.domg[i];
+	}
+}
 
-	// root vortices strength
-#ifdef ROT
-	VortexRotStr();
-#endif // ROT
 
-	// near wake strength
-#ifdef NER
-	VortexNerStr();
-#endif // NER
+Copter::~Copter()
+{
+	rho = 0;
+	vsound = 0;
+	for (int i = 2; i >= 0; --i) {
+		vel[i] = 0;
+		omg[i] = 0;
+		dvel[i] = 0;
+		domg[i] = 0;
+	}
+	myTYPE origin[3] = { 0,0,0 };
+	myTYPE euler[3] = { 0,0,0 };
+	/* read config files */
 
-	// compute induced velocity by prescribed wake	
-	//InducedVelCompte();
-	//InducedVelCompte_v1();
-	InducedVelCompte_v2();
+	refcoord.~Coordinate(); //如果注释了，会自动进入吗
+}
 
+
+Component::Component() :Copter() {
+	for (int i = 2; i >= 0; --i) {
+		airforce[i] = 0;
+		airmoment[i] = 0;
+	}
+}
+
+
+Component::Component(const Component &C) {
+	for (int i = 2; i >= 0; --i) {
+		airforce[i] = C.airforce[i];
+		airmoment[i] = C.airmoment[i];
+	}
+}
+
+
+Component::~Component() {
+	for (int i = 2; i >= 0; --i) {
+		airforce[i] = 0;
+		airmoment[i] = 0;
+	}
+}
+
+
+Fuselage::Fuselage() :Component() {
+	cout << "Fuselage construtor deriving from Copter." << endl;
+	// read config file
+#ifdef UL496
+	dragA = 0.0315;
+
+#endif // UL496
 
 }
 
 
-void MRotor::AeroDynaCoef(void) {
+Fuselage::Fuselage(const Fuselage &F) {
+	dragA = F.dragA;
+}
+
+
+Fuselage::~Fuselage() {
+	dragA = 0;
+}
+
+
+inline void Fuselage::SetAirfm(void) {
+	// update states
+	//Coordinate coord_temp = H.refcoord;
+	//SetStates(H.vel, H.omg, H.dvel, H.domg, H.refcoord); 放在外面，用fuselage的对象去调用
+	airforce[0] = -0.5*vel[0] * vel[0] * rho * dragA;
+	airforce[1] = airforce[2] = 0;
+	airmoment[0] = airmoment[1] = airmoment[2] = 0;
+}
+
+
+Wing::Wing(const char *s, int num=1) :Component() {
+	cout << "Wing construtor deriving from Copter." << endl;
+	//read config files
+	myTYPE origin[3], euler[3];
+
+	strcpy(type, s);
+
+#ifdef UL496
+	if (!strcmp(s, "hor")) {
+		origin[1] = 0;
+		origin[2] = 0;
+		euler[0] = 0;
+		euler[1] = -4 * PI / 180;
+		euler[2] = 0;
+		refcoord.SetCoordinate(origin, euler);
+		a0 = 5.73;
+		cd0 = 0.04;
+		cd1 = 0;
+		cd2 = 0;
+		span = 3.75;
+		chord = 1;
+		taper = 1;
+
+	}
+	else if (!strcmp(s, "ver")) { 
+		span = 1.33;
+		chord = 1.13;
+		taper = 0.51;
+		a0 = 5.3;
+		cd0 = 0.0105;
+		cd1 = 0;
+		cd2 = 0.01325;
+		if (num == 1) {
+			origin[0] = 7.87 + 0.164;
+			origin[1] = 3.75 / 2;
+			origin[2] = 0;
+			euler[0] = PI / 2;
+			euler[1] = 0;
+			euler[2] = 5 * PI / 180;
+			refcoord.SetCoordinate(origin, euler);
+		}
+		else if (num == 2) {
+			origin[0] = 7.87 - 0.164;
+			origin[1] = 3.75 / 2;
+			origin[2] = 0;
+			euler[0] = -PI / 2;
+			euler[1] = 0;
+			euler[2] = 5 * PI / 180;
+			refcoord.SetCoordinate(origin, euler);
+		}
+		else {
+			cout << "Component beyond defining." << endl;
+			exit(EXIT_FAILURE);
+		}
+		
+
+		
+	}
+	else {
+		cout << "Wrong wing type gotten." << endl;
+		exit(EXIT_FAILURE);
+	}
+#endif // UL496
+
+}
+
+
+Wing::Wing(const Wing &W) {
+	strcpy(type, W.type);
+	a0 = W.a0;
+	cd0 = W.cd0;
+	cd1 = W.cd1;
+	cd2 = W.cd2;
+	span = W.span;
+	chord = W.chord;
+	taper = W.taper;
+}
+
+
+Wing::~Wing() {
+	type = NULL;
+#ifdef UL496
+	a0 = 0;
+	cd0 = 0;
+	cd1 = 0;
+	cd2 = 0;
+	span = 0;
+	chord = 0;
+	taper = 0;
+#endif // UL496
+
+}
+
+
+inline void Wing::SetAirfm(void) { 
+	myTYPE s12, ar, a03d;
+	myTYPE aoa, cl, cd, vel2;
+#ifdef UL496
+	if (!strcmp(type, "hor")) { s12 = span * chord * (1 + taper) / 4; }
+	else if (!strcmp(type, "ver")) { s12 = span * chord * (1 + taper) / 2; }
+	else {
+		cout << "Wrong wing type gotten." << endl;
+		system("pause");
+	}
+		ar = span*span / s12 / s12;
+		a03d = a0*ar / (ar + 2 * (ar + 4) / (ar + 2));
+
+		aoa = Atan2(vel[0], vel[2]);
+		cl = a03d*aoa;
+		cd = cd0 + aoa * (cd1 + aoa*cd2);
+
+		vel2 = vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2];
+		airforce[0] = -0.5 * rho * s12 * vel2 * cd;
+		airforce[1] = 0;
+		airforce[2] = -0.5 * rho * s12 * vel2 * cl;
+		airmoment[0] = 0;
+		airmoment[1] = 0;
+		airmoment[2] = 0;
+#endif
+}
+
+
+Rotor::Rotor(const char *type) :Copter() {
+	cout << "Rotor construtor deriving from Copter." << endl;
+	// read config file
+	if (!strcmp(type, "main")) {
+		nf = 72;
+		ns = 41;
+		if (DISABLE_REVISE_SIZE) {
+			if (nf*ns > MAX_SIZE) {
+				printf("nf %d and ns %d make beyond of %d \n", nf, ns, MAX_SIZE);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		kwtip = 5;
+		kwrot = 5;
+		nk = kwtip * nf;
+		eflap = 0;
+		khub = 0;
+		del = 0;
+		pitchroot = 0;
+		radius = 11.5;
+		bt = 0.98;
+		rroot = 0.15;
+		precone = 3 / 180 * PI;
+		omega = 54.977871437821380;
+		vtipa = omega * radius;
+		outboard = 0.3;
+		rc0 = 0.004852173913043;
+
+		cltc.allocate(CL_I, CL_J);
+		cdtc.allocate(CD_I, CD_J);
+		cltc.input("vr7_cl_c81.txt");
+		cdtc.input("vr7_cd_c81.txt");
+
+		chord.allocate(nf, ns);
+		sweep.allocate(nf, ns);
+		twist.allocate(nf, ns);
+		azstation.allocate(nf, ns);
+		rastation.allocate(nf, ns);
+		chord.setvalue(0.558);
+		sweep.setvalue(0);
+		//chord.input("chord.txt");
+		//twist.input("twist.txt");
+		//azstation.input("azstation.txt");
+		//rastation.input("rastation.txt");
+		myTYPE temp_twist, temp_azimuth, temp_station;
+		for (int j = ns - 1; j >= 0; --j) {
+			temp_station = rroot + j*(1 - rroot) / (ns - 1);
+			temp_twist = j / (ns - 1)*(-8 / 180 * PI);
+			for (int i = nf - 1; i >= 0; --i) {
+				twist(i, j) = temp_twist;
+				rastation(i, j) = temp_station;
+				azstation(i, j) = i / nf * 2 * PI;
+			}
+		}				
+		
+		// coordinate initialize
+		hubfxcoord.setcoordinate(refcoord.origin, refcoord.euler);
+		hubrtcoord.setcoordinate(refcoord.origin, refcoord.euler);
+		bladecoord.setcoordinate(refcoord.origin, refcoord.euler);
+		tppcoord.setcoordinate(refcoord.origin, refcoord.euler);
+
+
+		// initialize member variables to zero
+		mul = 0;
+		lambag = 0;
+		power = 0;
+		torque = 0;
+
+		beta[0] = beta[1] = beta[2] = 0;
+		sita[0] = sita[1] = sita[2] = 0;
+		vel[0] = vel[1] = vel[2] = 0;
+		omg[0] = omg[1] = omg[2] = 0;
+
+		bflap.allocate(nf, ns); // flap
+		dbflap.allocate(nf, ns);
+		sfth.allocate(nf, ns);  // pitch 
+		ut.allocate(nf, ns);    // air velocity
+		un.allocate(nf, ns);
+		up.allocate(nf, ns);
+		ua.allocate(nf, ns);
+		ma_n.allocate(nf, ns);
+		incidn.allocate(nf, ns);// AOA
+		cl.allocate(nf, ns);    // air coefficients
+		cd.allocate(nf, ns);
+		cirlb.allocate(nf, ns); // circulation
+		tipstr.allocate(nk, nf);
+		lambdi.allocate(nf, ns);// induced velocity
+		lambdx.allocate(nf, ns);
+		lambdy.allocate(nf, ns);
+
+		tipgeometry.allocate(nk, nf, 3);
+		bladedeform.allocate(nf, ns, 3);
+		
+
+	}
+	else if (!strcmp(type, "tail")) {
+		;
+	}
+	else {
+		cout << "Wrong rotor type. Please input main, or tail." << endl;
+		exit(EXIT_FAILURE);
+	}	
+}
+
+
+Rotor::Rotor(const Rotor &A) { cout << "Rotor copy construtor." << endl; }
+
+
+Rotor::~Rotor() {
+	cout << "Rotor destructor." << endl;
+	kwtip = kwrot = nk = nf = ns = nbn = naf = nnr = 0;
+	eflap = khub = del = pitchroot = radius = bt = rroot = 0;
+	precone = omega = 0;
+	sigma = gama = a0 = 0;
+	iflap = m1 = rtip = rc0 = outboard = 0;
+	mul = vtipa = 0;
+	lambag = power = torque = 0;
+	beta[0] = beta[1] = beta[2] = 0;
+	sita[0] = sita[1] = sita[2] = 0;
+	rastation.deallocate();
+	ristation.deallocate();
+	azstation.deallocate();
+	chord.deallocate();
+	twist.deallocate();
+	sweep.deallocate();
+	cltc.deallocate();
+	cdtc.deallocate();
+	cmtc.deallocate();
+	bflap.deallocate();
+	dbflap.deallocate();
+	sfth.deallocate();
+	ut.deallocate();
+	un.deallocate();
+	up.deallocate();
+	ua.deallocate();
+	ma_n.deallocate();
+	incidn.deallocate();
+	cl.deallocate();
+	cd.deallocate();
+	cirlb.deallocate();
+	lambdi.deallocate();
+	lambdh.deallocate();
+	lambdt.deallocate();
+	lambdx.deallocate();
+	lambdy.deallocate();
+	tipstr.deallocate();
+	rotstr.deallocate();
+	shdstr.deallocate();
+	trlstr.deallocate();
+	bladedeform.deallocate();
+	tipgeometry.deallocate();
+	
+}
+
+
+void Rotor::InducedVelCalc(void) {
+
+	AvrgInducedVel();
+#ifdef PREWAKE
+
+	PredWakeGeometry();
+	InducedVelCalc_Prewake_v3();
+#endif // PREWAKE
+#ifdef FREEWAKE
+	;
+#endif // FREEWAKE
+
+}
+
+
+void Rotor::AeroDynaCoef(void) {
 	Matrix2<myTYPE> incidn_temp(nf, ns);
 	
 	// transfer to degree unit
@@ -50,7 +419,7 @@ void MRotor::AeroDynaCoef(void) {
 }
 
 
-void MRotor::VortexBonStr(void) {
+void Rotor::VortexBonStr(void) {
 	// input variables	
 	//Matrix2<myTYPE> bflap(nf, ns), dbflap(nf, ns), sfth(nf, ns);
 	// output variables
@@ -104,7 +473,7 @@ void MRotor::VortexBonStr(void) {
 }
 
 
-void MRotor::VortexTipStr(void) {
+void Rotor::VortexTipStr(void) {
 	// output variables
 	//Matrix2<myTYPE> tipstr;
 	// others
@@ -128,7 +497,7 @@ void MRotor::VortexTipStr(void) {
 }
 
 
-void MRotor::VortexRotStr(void) {
+void Rotor::VortexRotStr(void) {
 	// output variables
 
 	// others
@@ -145,7 +514,7 @@ void MRotor::VortexRotStr(void) {
 }
 
 
-void MRotor::PredWakeGeometry(void) {
+void Rotor::PredWakeGeometry(void) {
 	
 	// output variables
 	Matrix3<myTYPE> tipgeometry;
@@ -217,7 +586,7 @@ void MRotor::PredWakeGeometry(void) {
 }
 
 
-void MRotor::InducedVelCompte(void) {
+void Rotor::InducedVelCalc_Prewake_v0(void) {
 	// input variables and others
 	Matrix3<myTYPE> tipgeoexpand_athub;
 	Matrix2<myTYPE> tipgeoexpand;
@@ -324,7 +693,7 @@ void MRotor::InducedVelCompte(void) {
 }
 
 
-void MRotor::InducedVelCompte_v1(void) {
+void Rotor::InducedVelCalc_Prewake_v1(void) {
 	// input variables
 
 	// output variables
@@ -472,7 +841,7 @@ void MRotor::InducedVelCompte_v1(void) {
 }
 
 
-void MRotor::InducedVelCompte_v2(void) {
+void Rotor::InducedVelCalc_Prewake_v2(void) {
 	// input variables
 
 	// output variables
@@ -652,4 +1021,3 @@ void MRotor::InducedVelCompte_v2(void) {
 	}
 	//printf("version 2: %f\n", lambdi.sum());
 }
-
